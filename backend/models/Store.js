@@ -6,6 +6,10 @@ const storeSchema = new mongoose.Schema({
   name: String,
   location: String,
   qrCodeUrl: String,
+  originalName: String,
+size: Number,
+  createdAt: { type: Date, default: Date.now },
+   imageUrl: String, 
 });
 
 module.exports = mongoose.model("Store", storeSchema);

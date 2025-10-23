@@ -5,14 +5,36 @@ const FileUpload = require("../models/FileUpload");
 // Create a store for the logged-in owner
 const createStore = async (req, res) => {
   const { name, location } = req.body;
+  let imageUrl = "";
+
+  if (req.file) {
+    const streamUpload = (buffer) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.v2.uploader.upload_stream(
+          { folder: "store_images" },
+          (error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+          }
+        );
+        streamifier.createReadStream(buffer).pipe(stream);
+      });
+
+    const result = await streamUpload(req.file.buffer);
+    imageUrl = result.secure_url;
+  }
+
   const store = await Store.create({
     owner: req.user._id,
     name,
     location,
     qrCodeUrl: `https://scan2print.in/store/${req.user._id}`,
+    imageUrl,
   });
+
   res.json(store);
 };
+
 
 // Get store by ID (for QR redirect)
 const getStoreById = async (req, res) => {
@@ -28,6 +50,10 @@ const getStoreFiles = async (req, res) => {
   const uploads = await FileUpload.find({ store: store._id });
   res.json(uploads);
 };
+const getAllStores = async (req, res) => {
+  const stores = await Store.find().select("name location qrCodeUrl");
+  res.json(stores);
+};
 
 // Delete a specific uploaded file
 const deleteStoreFile = async (req, res) => {
@@ -41,4 +67,4 @@ const deleteStoreFile = async (req, res) => {
   res.json({ message: "File deleted successfully" });
 };
 
-module.exports = { createStore, getStoreById, getStoreFiles, deleteStoreFile };
+module.exports = { createStore, getStoreById, getStoreFiles,getAllStores, deleteStoreFile };

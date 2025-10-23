@@ -51,7 +51,7 @@ const uploadFile = async (req, res) => {
 };
 
 // Get all files for a store
-const getStoreFiles = async (req, res) => {
+const getStoreUploads = async (req, res) => {
   const storeId = req.params.storeId;
   const store = await Store.findById(storeId);
   if (!store) return res.status(404).json({ message: "Store not found" });
@@ -77,4 +77,4 @@ const deleteFile = async (req, res) => {
   res.json({ message: "File deleted successfully" });
 };
 
-module.exports = { uploadFile, getStoreFiles, deleteFile };
+module.exports = { uploadFile, getStoreUploads, deleteFile };
