@@ -1,32 +1,28 @@
-// storeRoutes.js
 const express = require("express");
-
 const multer = require("multer");
-const upload = multer(); 
+const upload = multer({ storage: multer.memoryStorage() });
 const {
-  createStore,
-  getStoreById,
-  getStoreFiles,
-  deleteStoreFile,
+  registerStore,
+  loginStore,
   getAllStores,
+  getStoreById,
 } = require("../controllers/storeController");
 const { protect } = require("../middleware/authMiddleware");
+const { deleteFile } = require("../controllers/uploadController");
 const router = express.Router();
 
+// Register store
+router.post("/register", upload.single("logo"), registerStore);
+
+// Login store
+router.post("/login", loginStore);
+
+// Get all stores (homepage)
 router.get("/", getAllStores);
 
-// Create a store for the owner
-
-
-router.post("/create", upload.single("image"), createStore);
-
-// Get store by ID (for QR redirect)
+// Get store by ID
 router.get("/:id", getStoreById);
 
-// Get uploaded files for a store
-router.get("/:id/files", protect, getStoreFiles);
-
-// Delete a specific uploaded file
-router.delete("/:id/files/:fileId", protect, deleteStoreFile);
+router.delete("/:id",protect, deleteFile)
 
 module.exports = router;

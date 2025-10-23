@@ -1,70 +1,65 @@
-// storeController.js
 const Store = require("../models/Store");
-const FileUpload = require("../models/FileUpload");
+const cloudinary = require("../utils/cloudinary");
+const streamifier = require("streamifier");
+const generateQRCode = require("../utils/generateQRCode");
+const jwt = require("jsonwebtoken");
 
-// Create a store for the logged-in owner
-const createStore = async (req, res) => {
-  const { name, location } = req.body;
-  let imageUrl = "";
+// Register store
+const registerStore = async (req, res) => {
+  const { name, location, email, password } = req.body;
 
+  const exists = await Store.findOne({ email });
+  if (exists) return res.status(400).json({ message: "Email already exists" });
+
+  let logoUrl = "";
   if (req.file) {
     const streamUpload = (buffer) =>
       new Promise((resolve, reject) => {
-        const stream = cloudinary.v2.uploader.upload_stream(
-          { folder: "store_images" },
-          (error, result) => {
-            if (result) resolve(result);
-            else reject(error);
-          }
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "store_logos" },
+          (err, result) => (result ? resolve(result) : reject(err))
         );
         streamifier.createReadStream(buffer).pipe(stream);
       });
-
     const result = await streamUpload(req.file.buffer);
-    imageUrl = result.secure_url;
+    logoUrl = result.secure_url;
   }
 
-  const store = await Store.create({
-    owner: req.user._id,
-    name,
-    location,
-    qrCodeUrl: `https://scan2print.in/store/${req.user._id}`,
-    imageUrl,
-  });
+  const store = await Store.create({ name, location, email, password, logoUrl });
 
-  res.json(store);
+  const qrCodeUrl = await generateQRCode(`${process.env.FRONTEND_URL}/store/${store._id}`);
+  store.qrCodeUrl = qrCodeUrl;
+  await store.save();
+
+  const token = jwt.sign({ id: store._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+  res.json({ store, token });
 };
 
-
-// Get store by ID (for QR redirect)
-const getStoreById = async (req, res) => {
-  const store = await Store.findById(req.params.id);
-  if (!store) return res.status(404).json({ message: "Store not found" });
-  res.json(store);
+// Login store
+const loginStore = async (req, res) => {
+  const { email, password } = req.body;
+  const store = await Store.findOne({ email });
+  if (store && (await store.matchPassword(password))) {
+    const token = jwt.sign({ id: store._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+    res.json({ store, token });
+  } else {
+    res.status(401).json({ message: "Invalid credentials" });
+  }
 };
 
-// Get uploaded files for a store
-const getStoreFiles = async (req, res) => {
-  const store = await Store.findById(req.params.id);
-  if (!store) return res.status(404).json({ message: "Store not found" });
-  const uploads = await FileUpload.find({ store: store._id });
-  res.json(uploads);
-};
+// Get all stores (for homepage)
 const getAllStores = async (req, res) => {
-  const stores = await Store.find().select("name location qrCodeUrl");
+  const stores = await Store.find().select("name location logoUrl qrCodeUrl");
   res.json(stores);
 };
 
-// Delete a specific uploaded file
-const deleteStoreFile = async (req, res) => {
-  const { id, fileId } = req.params;
-  const store = await Store.findById(id);
+// Get store by ID
+const getStoreById = async (req, res) => {
+  const store = await Store.findById(req.params.id).select("-password");
   if (!store) return res.status(404).json({ message: "Store not found" });
-
-  const file = await FileUpload.findOneAndDelete({ _id: fileId, store: store._id });
-  if (!file) return res.status(404).json({ message: "File not found" });
-
-  res.json({ message: "File deleted successfully" });
+  res.json(store);
 };
 
-module.exports = { createStore, getStoreById, getStoreFiles,getAllStores, deleteStoreFile };
+
+module.exports = { registerStore, loginStore, getAllStores, getStoreById };
