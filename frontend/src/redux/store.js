@@ -3,12 +3,10 @@ import authReducer from "./slices/authSlice";
 import storeReducer from "./slices/storeSlice";
 import uploadReducer from "./slices/uploadSlice";
 
-const store = configureStore({
+export default configureStore({
   reducer: {
     auth: authReducer,
     store: storeReducer,
     upload: uploadReducer,
   },
 });
-
-export default store;

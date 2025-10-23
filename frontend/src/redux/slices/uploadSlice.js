@@ -1,69 +1,42 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import * as uploadService from "../../api/uploadService";
 
-export const uploadFile = createAsyncThunk("upload/file", async ({ storeId, formData }, thunkAPI) => {
-  try {
-    return await uploadService.uploadFile(storeId, formData);
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Upload failed");
+export const fetchStoreUploads = createAsyncThunk(
+  "upload/fetch",
+  async (storeId) => {
+    const res = await uploadService.getStoreUploads(storeId);
+    return res.data;
   }
-});
+);
 
-export const fetchFiles = createAsyncThunk("upload/fetchFiles", async (storeId, thunkAPI) => {
-  try {
-    return await uploadService.getFiles(storeId);
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Fetch failed");
+export const uploadFile = createAsyncThunk(
+  "upload/uploadFile",
+  async ({ storeId, formData }) => {
+    const res = await uploadService.uploadFile(storeId, formData);
+    return res.data;
   }
-});
+);
 
-export const deleteFile = createAsyncThunk("upload/deleteFile", async (fileId, thunkAPI) => {
-  try {
-    await uploadService.deleteFile(fileId);
+export const deleteUploadFile = createAsyncThunk(
+  "upload/deleteFile",
+  async (fileId) => {
+    await uploadService.deleteUploadFile(fileId);
     return fileId;
-  } catch (error) {
-    return thunkAPI.rejectWithValue(error.response?.data?.message || "Delete failed");
   }
-});
+);
 
 const uploadSlice = createSlice({
   name: "upload",
-  initialState: {
-    uploads: [],
-    loading: false,
-    error: null,
-    success: false,
-  },
-  reducers: {
-    resetUploadState: (state) => {
-      state.loading = false;
-      state.error = null;
-      state.success = false;
-    },
-  },
+  initialState: { files: [], loading: false },
+  reducers: {},
   extraReducers: (builder) => {
     builder
-      .addCase(uploadFile.pending, (state) => { state.loading = true; })
-      .addCase(uploadFile.fulfilled, (state, action) => {
-        state.loading = false;
-        state.success = true;
-        state.uploads.push(action.payload);
-      })
-      .addCase(fetchFiles.fulfilled, (state, action) => {
-        state.uploads = action.payload;
-      })
-      .addCase(deleteFile.fulfilled, (state, action) => {
-        state.uploads = state.uploads.filter((f) => f._id !== action.payload);
-      })
-      .addMatcher(
-        (action) => action.type.endsWith("/rejected"),
-        (state, action) => {
-          state.loading = false;
-          state.error = action.payload;
-        }
-      );
+      .addCase(fetchStoreUploads.fulfilled, (state, action) => { state.files = action.payload; })
+      .addCase(uploadFile.fulfilled, (state, action) => { state.files.push(action.payload); })
+      .addCase(deleteUploadFile.fulfilled, (state, action) => {
+        state.files = state.files.filter((f) => f._id !== action.payload);
+      });
   },
 });
 
-export const { resetUploadState } = uploadSlice.actions;
 export default uploadSlice.reducer;
