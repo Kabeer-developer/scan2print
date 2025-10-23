@@ -18,7 +18,7 @@ router.get("/", getAllStores);
 // Create a store for the owner
 
 
-router.post("/create", protect, upload.single("image"), createStore);
+router.post("/create", upload.single("image"), createStore);
 
 // Get store by ID (for QR redirect)
 router.get("/:id", getStoreById);
