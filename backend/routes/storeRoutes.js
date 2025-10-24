@@ -23,6 +23,6 @@ router.get("/", getAllStores);
 // Get store by ID
 router.get("/:id", getStoreById);
 
-router.delete("/:id",protect, deleteFile)
+
 
 module.exports = router;
