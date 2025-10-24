@@ -1,12 +1,17 @@
-import axios from "./axiosInstance";
+import axios from "axios";
+const API = import.meta.env.VITE_API_URL;
 
 export const uploadFile = (storeId, formData) =>
-  axios.post(`/upload/${storeId}`, formData, {
+  axios.post(`${API}/uploads/${storeId}`, formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
-export const getStoreUploads = (storeId) =>
-  axios.get(`/upload/files/${storeId}`);
+export const getStoreUploads = (storeId, token) =>
+  axios.get(`${API}/uploads/files/${storeId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-export const deleteUploadFile = (fileId) =>
-  axios.delete(`/upload/files/${fileId}`);
+export const deleteFile = (fileId, token) =>
+  axios.delete(`${API}/uploads/files/${fileId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
