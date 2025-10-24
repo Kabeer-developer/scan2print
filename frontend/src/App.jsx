@@ -1,28 +1,36 @@
-import React from "react";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import React, { useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
-import RegisterStore from "./pages/RegisterStore";
 import StoreDetail from "./pages/StoreDetail";
+import RegisterStore from "./pages/RegisterStore";
 import Dashboard from "./pages/Dashboard";
-import ProtectedRoute from "./components/ProtectedRoute";
+import Navbar from "./components/Navbar";
+import { useDispatch } from "react-redux";
+import { loadUserFromStorage } from "./redux/slices/storeSlice";
+import LoginStore from "./pages/LoginStore";
 
-function App() {
+const App = () => {
+  const dispatch = useDispatch();
+
+  useEffect(() => {
+    dispatch(loadUserFromStorage());
+  }, [dispatch]);
+
   return (
-    <BrowserRouter>
+    <div className="min-h-screen">
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/register" element={<RegisterStore />} />
-        <Route path="/store/:id" element={<StoreDetail />} />
-        <Route path="/dashboard/:id" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-      </Routes>
-    </BrowserRouter>
+      <main className="container mx-auto px-4 py-6">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/store/:id" element={<StoreDetail />} />
+          <Route path="/register" element={<RegisterStore />} />
+          <Route path="/login" element={<LoginStore />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
-}
+};
 
 export default App;
